@@ -125,6 +125,8 @@ export default function App() {
   const [sampleIndex, setSampleIndex] = useState(-1);
   const [undoStack, setUndoStack] = useState([]);
   const [tintedBucketIcon, setTintedBucketIcon] = useState(bucketIcon);
+  const [submitStatus, setSubmitStatus] = useState(null); // null | "loading" | "success" | "error"
+  const [submitError, setSubmitError] = useState("");
   const selectedToolColor = currentColor === TRANSPARENT_COLOR ? "#EFEFEF" : currentColor;
 
   const samples = useMemo(() => buildSamples(), []);
@@ -468,7 +470,7 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!name.trim()) {
@@ -481,7 +483,26 @@ export default function App() {
       pngData: getPngDataUrl()
     };
 
-    console.log("Frontend-only payload:", payload);
+    setSubmitStatus("loading");
+    setSubmitError("");
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || `Server error (${response.status})`);
+      }
+
+      setSubmitStatus("success");
+    } catch (err) {
+      setSubmitStatus("error");
+      setSubmitError(err.message || "Something went wrong. Please try again.");
+    }
   }
 
   function normalizeColor(hexColor) {
@@ -804,10 +825,16 @@ export default function App() {
             <button id="download-png" type="button" className="subtle-btn" onClick={downloadPng}>
               Download PNG
             </button>
-            <button type="submit" className="submit-btn">
-              Submit
+            <button type="submit" className="submit-btn" disabled={submitStatus === "loading"}>
+              {submitStatus === "loading" ? "Submitting…" : "Submit"}
             </button>
           </div>
+          {submitStatus === "success" && (
+            <p className="submit-success">Submitted! Your train is pending review.</p>
+          )}
+          {submitStatus === "error" && (
+            <p className="submit-error">{submitError}</p>
+          )}
         </form>
       </section>
     </main>
