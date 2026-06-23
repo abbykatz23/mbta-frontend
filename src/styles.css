@@ -621,6 +621,11 @@ button:disabled {
   color: #ff6b6b;
 }
 
+.train-card-queued {
+  font-size: 0.72rem;
+  color: var(--mbta-green);
+}
+
 .train-card-actions {
   display: flex;
   gap: 0.35rem;

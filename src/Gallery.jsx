@@ -70,7 +70,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
   const [editName, setEditName] = useState(submission.name);
   const [editBirthday, setEditBirthday] = useState(submission.birthday);
   const [busy, setBusy] = useState(false);
-  const [queued, setQueued] = useState(false);
+  const [queuedMsg, setQueuedMsg] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -122,8 +122,8 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
         headers: { "X-API-Key": apiKey },
       });
       if (!res.ok) throw new Error("Queue failed");
-      setQueued(true);
-      setTimeout(() => setQueued(false), 4000);
+      setQueuedMsg("Queued! It'll show on the next train animation.");
+      setTimeout(() => setQueuedMsg(""), 6000);
     } catch (err) {
       setError(err.message);
     }
@@ -163,11 +163,12 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
             <span className="train-card-name">{submission.name}</span>
             <span className="train-card-birthday">{formatBirthday(submission.birthday)}</span>
             {error && <span className="train-card-error">{error}</span>}
+            {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
             {isAdmin && (
               <div className="train-card-actions">
                 <button className="subtle-btn" onClick={() => setEditing(true)} disabled={busy}>Edit</button>
                 <button className="subtle-btn show-now-btn" onClick={handleQueue} disabled={busy}>
-                  {queued ? "Queued!" : "Show Now"}
+                  Show Now
                 </button>
                 <button className="subtle-btn delete-btn" onClick={handleDelete} disabled={busy}>Delete</button>
               </div>
