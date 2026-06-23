@@ -4,6 +4,9 @@ import bucketIcon from "./static/bucket.png";
 const GRID_WIDTH = 26;
 const GRID_HEIGHT = 5;
 const PIXEL_SIZE = 30;
+const PREVIEW_PIXEL_SIZE = 10;
+const LINK_ROW = 3;
+const LINK_COLOR = "#464646";
 const TRANSPARENT_COLOR = "__TRANSPARENT__";
 
 const MONTHS = [
@@ -106,6 +109,7 @@ function dataUrlToBlob(dataUrl) {
 
 export default function App() {
   const canvasRef = useRef(null);
+  const previewCanvasRef = useRef(null);
   const drawingRef = useRef(false);
   const colorPanelRef = useRef(null);
   const addSwatchRef = useRef(null);
@@ -183,6 +187,68 @@ export default function App() {
     }
 
     ctx.restore();
+  }, [pixels]);
+
+  const hasPixels = useMemo(() => pixels.some((row) => row.some((cell) => cell !== null)), [pixels]);
+
+  useEffect(() => {
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
+
+    let left = GRID_WIDTH, right = -1;
+    for (let col = 0; col < GRID_WIDTH; col += 1) {
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        if (pixels[row][col] !== null) {
+          if (col < left) left = col;
+          if (col > right) right = col;
+        }
+      }
+    }
+
+    const ctx = canvas.getContext("2d");
+
+    if (right === -1) {
+      canvas.width = 1;
+      canvas.height = GRID_HEIGHT * PREVIEW_PIXEL_SIZE;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const W = right - left + 1;
+    const totalCols = 3 * W + 2;
+    canvas.width = totalCols * PREVIEW_PIXEL_SIZE;
+    canvas.height = GRID_HEIGHT * PREVIEW_PIXEL_SIZE;
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const assembled = Array.from({ length: GRID_HEIGHT }, () => new Array(totalCols).fill(null));
+    for (let carIdx = 0; carIdx < 3; carIdx += 1) {
+      const xOffset = carIdx * (W + 1);
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        for (let col = left; col <= right; col += 1) {
+          assembled[row][xOffset + (col - left)] = pixels[row][col];
+        }
+      }
+    }
+
+    for (const linkX of [W, 2 * W + 1]) {
+      assembled[LINK_ROW][linkX] = LINK_COLOR;
+      for (let col = linkX - 1; col >= 0 && assembled[LINK_ROW][col] === null; col -= 1) {
+        assembled[LINK_ROW][col] = LINK_COLOR;
+      }
+      for (let col = linkX + 1; col < totalCols && assembled[LINK_ROW][col] === null; col += 1) {
+        assembled[LINK_ROW][col] = LINK_COLOR;
+      }
+    }
+
+    for (let row = 0; row < GRID_HEIGHT; row += 1) {
+      for (let col = 0; col < totalCols; col += 1) {
+        const color = assembled[row][col];
+        if (!color) continue;
+        ctx.fillStyle = color;
+        ctx.fillRect(col * PREVIEW_PIXEL_SIZE, row * PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE);
+      }
+    }
   }, [pixels]);
 
   useEffect(() => {
@@ -430,8 +496,25 @@ export default function App() {
   }
 
   function getPngDataUrl() {
+    let left = GRID_WIDTH;
+    let right = -1;
+    for (let col = 0; col < GRID_WIDTH; col += 1) {
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        if (pixels[row][col] !== null) {
+          if (col < left) left = col;
+          if (col > right) right = col;
+        }
+      }
+    }
+
+    if (right === -1) {
+      left = 0;
+      right = GRID_WIDTH - 1;
+    }
+
+    const trimmedWidth = right - left + 1;
     const offscreenCanvas = document.createElement("canvas");
-    offscreenCanvas.width = GRID_WIDTH;
+    offscreenCanvas.width = trimmedWidth;
     offscreenCanvas.height = GRID_HEIGHT;
     const offscreenCtx = offscreenCanvas.getContext("2d");
     if (!offscreenCtx) {
@@ -439,28 +522,76 @@ export default function App() {
     }
 
     offscreenCtx.imageSmoothingEnabled = false;
-    offscreenCtx.clearRect(0, 0, GRID_WIDTH, GRID_HEIGHT);
+    offscreenCtx.clearRect(0, 0, trimmedWidth, GRID_HEIGHT);
 
     for (let row = 0; row < GRID_HEIGHT; row += 1) {
-      for (let col = 0; col < GRID_WIDTH; col += 1) {
+      for (let col = left; col <= right; col += 1) {
         const color = pixels[row][col];
         if (!color) {
           continue;
         }
         offscreenCtx.fillStyle = color;
-        offscreenCtx.fillRect(col, row, 1, 1);
+        offscreenCtx.fillRect(col - left, row, 1, 1);
       }
     }
 
     return offscreenCanvas.toDataURL("image/png");
   }
 
-  function downloadPng() {
-    const dataUrl = getPngDataUrl();
-    if (!dataUrl) {
-      return;
+  function getAssembledPngDataUrl() {
+    let left = GRID_WIDTH, right = -1;
+    for (let col = 0; col < GRID_WIDTH; col += 1) {
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        if (pixels[row][col] !== null) {
+          if (col < left) left = col;
+          if (col > right) right = col;
+        }
+      }
     }
+    if (right === -1) { left = 0; right = GRID_WIDTH - 1; }
 
+    const W = right - left + 1;
+    const totalCols = 3 * W + 2;
+    const offscreen = document.createElement("canvas");
+    offscreen.width = totalCols;
+    offscreen.height = GRID_HEIGHT;
+    const ctx = offscreen.getContext("2d");
+    if (!ctx) return "";
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, totalCols, GRID_HEIGHT);
+
+    const assembled = Array.from({ length: GRID_HEIGHT }, () => new Array(totalCols).fill(null));
+    for (let carIdx = 0; carIdx < 3; carIdx += 1) {
+      const xOffset = carIdx * (W + 1);
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        for (let col = left; col <= right; col += 1) {
+          assembled[row][xOffset + (col - left)] = pixels[row][col];
+        }
+      }
+    }
+    for (const linkX of [W, 2 * W + 1]) {
+      assembled[LINK_ROW][linkX] = LINK_COLOR;
+      for (let col = linkX - 1; col >= 0 && assembled[LINK_ROW][col] === null; col -= 1) {
+        assembled[LINK_ROW][col] = LINK_COLOR;
+      }
+      for (let col = linkX + 1; col < totalCols && assembled[LINK_ROW][col] === null; col += 1) {
+        assembled[LINK_ROW][col] = LINK_COLOR;
+      }
+    }
+    for (let row = 0; row < GRID_HEIGHT; row += 1) {
+      for (let col = 0; col < totalCols; col += 1) {
+        const color = assembled[row][col];
+        if (!color) continue;
+        ctx.fillStyle = color;
+        ctx.fillRect(col, row, 1, 1);
+      }
+    }
+    return offscreen.toDataURL("image/png");
+  }
+
+  function downloadPng() {
+    const dataUrl = getAssembledPngDataUrl();
+    if (!dataUrl) return;
     const blob = dataUrlToBlob(dataUrl);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -503,6 +634,15 @@ export default function App() {
       setSubmitStatus("error");
       setSubmitError(err.message || "Something went wrong. Please try again.");
     }
+  }
+
+  function handleDesignAnother() {
+    setPixels(makeEmptyPixels());
+    setName("");
+    setUndoStack([]);
+    setSampleIndex(-1);
+    setSubmitStatus(null);
+    setSubmitError("");
   }
 
   function normalizeColor(hexColor) {
@@ -600,8 +740,8 @@ export default function App() {
       <section className="hero">
         <h1>Design Your Pixel Train</h1>
         <p className="subtitle">
-          Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds on your
-          birthday.
+          Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your
+          birthday week.
         </p>
       </section>
 
@@ -818,7 +958,23 @@ export default function App() {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
               />
+              <div className="canvas-direction-labels">
+                <span>← back</span>
+                <span>front →</span>
+              </div>
             </div>
+
+            {hasPixels && (
+              <div className="preview-wrap">
+                <span className="preview-label">3-car preview</span>
+                <canvas
+                  ref={previewCanvasRef}
+                  className="preview-canvas"
+                  aria-label="3-car train preview"
+                  role="img"
+                />
+              </div>
+            )}
           </section>
 
           <div className="submit-row">
@@ -830,7 +986,12 @@ export default function App() {
             </button>
           </div>
           {submitStatus === "success" && (
-            <p className="submit-success">Submitted! Your train is pending review.</p>
+            <div className="submit-success">
+              <p>Submitted! Your train will appear on the display within 24 hours.</p>
+              <button type="button" className="subtle-btn" onClick={handleDesignAnother}>
+                Design another
+              </button>
+            </div>
           )}
           {submitStatus === "error" && (
             <p className="submit-error">{submitError}</p>
