@@ -183,7 +183,7 @@ export default function Gallery({ isAdmin }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [apiKey, setApiKey] = useState("");
+  const apiKey = import.meta.env.VITE_PI_API_KEY || "";
 
   function fetchSubmissions() {
     setLoading(true);
@@ -204,22 +204,9 @@ export default function Gallery({ isAdmin }) {
       <section className="hero">
         <h1>The Trains</h1>
         <p className="subtitle">Every train that&apos;s been submitted to the display.</p>
-        <a href="/" className="gallery-nav-link">← Design your own</a>
+        <a href="/" className="gallery-nav-btn">← Design your own</a>
       </section>
 
-      {isAdmin && (
-        <section className="card admin-key-card">
-          <label className="field">
-            <span>Admin key</span>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter API key to enable admin actions"
-            />
-          </label>
-        </section>
-      )}
 
       <section className="card">
         {loading && <p className="gallery-loading">Loading trains…</p>}

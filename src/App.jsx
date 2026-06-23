@@ -743,7 +743,7 @@ export default function App() {
           Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your
           birthday week.
         </p>
-        <a href="/?gallery" className="gallery-nav-link">View all trains →</a>
+        <a href="/?gallery" className="gallery-nav-btn">View all trains →</a>
       </section>
 
       <section className="card">
