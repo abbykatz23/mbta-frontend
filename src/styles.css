@@ -543,11 +543,11 @@ button:disabled {
 .gallery-nav-btn {
   display: inline-block;
   margin-top: 0.75rem;
-  padding: 0.45rem 0.9rem;
+  padding: 0.7rem 1.4rem;
   border: 2px solid var(--line);
   background: #101010;
   color: var(--text);
-  font: 700 0.75rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font: 700 1rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: 0.04em;
   text-decoration: none;
 }

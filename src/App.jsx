@@ -113,6 +113,7 @@ export default function App() {
   const drawingRef = useRef(false);
   const colorPanelRef = useRef(null);
   const addSwatchRef = useRef(null);
+  const draftColorRef = useRef(null);
 
   const now = useMemo(() => new Date(), []);
   const [name, setName] = useState("");
@@ -123,6 +124,7 @@ export default function App() {
   const [currentColor, setCurrentColor] = useState(DEFAULT_PALETTE[0]);
   const [pickerColor, setPickerColor] = useState(DEFAULT_PALETTE[0]);
   const [draftColor, setDraftColor] = useState(DEFAULT_PALETTE[0]);
+  draftColorRef.current = draftColor;
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [pendingDeleteColor, setPendingDeleteColor] = useState(null);
   const [pixels, setPixels] = useState(makeEmptyPixels);
@@ -265,6 +267,11 @@ export default function App() {
       return;
     }
 
+    function commitAndClose() {
+      addColorToPalette(draftColorRef.current);
+      setShowColorPicker(false);
+    }
+
     function handlePointerDown(event) {
       const panelEl = colorPanelRef.current;
       const addEl = addSwatchRef.current;
@@ -272,12 +279,12 @@ export default function App() {
       if (panelEl?.contains(target) || addEl?.contains(target)) {
         return;
       }
-      cancelAddColor();
+      commitAndClose();
     }
 
     function handleEscape(event) {
       if (event.key === "Escape") {
-        cancelAddColor();
+        commitAndClose();
       }
     }
 
@@ -724,16 +731,7 @@ export default function App() {
     setShowColorPicker(true);
   }
 
-  function confirmAddColor() {
-    addColorToPalette(draftColor);
-    setShowColorPicker(false);
-  }
-
-  function cancelAddColor() {
-    setShowColorPicker(false);
-  }
-
-  const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
+const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
 
   return (
     <main className="page-shell">
@@ -743,7 +741,7 @@ export default function App() {
           Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your
           birthday week.
         </p>
-        <a href="/?gallery" className="gallery-nav-btn">View all trains →</a>
+        <a href="/?gallery" className="gallery-nav-btn">View the train gallery →</a>
       </section>
 
       <section className="card">
@@ -901,7 +899,12 @@ export default function App() {
                             setDraftColor(withHash);
                           }
                         }}
-                        onBlur={() => setDraftColor(rgbToHex(draftRgb.r, draftRgb.g, draftRgb.b))}
+                        onBlur={() => {
+                          const color = rgbToHex(draftRgb.r, draftRgb.g, draftRgb.b);
+                          setDraftColor(color);
+                          setCurrentColor(color);
+                          if (currentTool === "erase") setCurrentTool("paint");
+                        }}
                       />
                     </label>
                     <label className="picker-field">
@@ -910,14 +913,14 @@ export default function App() {
                         type="color"
                         className="picker-spectrum"
                         value={rgbToHex(draftRgb.r, draftRgb.g, draftRgb.b)}
-                        onChange={(event) => setDraftColor(normalizeColor(event.target.value))}
+                        onChange={(event) => {
+                          const color = normalizeColor(event.target.value);
+                          setDraftColor(color);
+                          setCurrentColor(color);
+                          if (currentTool === "erase") setCurrentTool("paint");
+                        }}
                       />
                     </label>
-                    <div className="picker-actions">
-                      <button type="button" className="subtle-btn picker-add-btn" onClick={confirmAddColor}>
-                        Select
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
