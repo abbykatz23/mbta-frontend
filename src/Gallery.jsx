@@ -1,10 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 const LINK_ROW = 3;
 const LINK_COLOR = "#464646";
 const CARD_SCALE = 8;
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const MONTHS = [
+  { value: 1, label: "January", days: 31 },
+  { value: 2, label: "February", days: 29 },
+  { value: 3, label: "March", days: 31 },
+  { value: 4, label: "April", days: 30 },
+  { value: 5, label: "May", days: 31 },
+  { value: 6, label: "June", days: 30 },
+  { value: 7, label: "July", days: 31 },
+  { value: 8, label: "August", days: 31 },
+  { value: 9, label: "September", days: 30 },
+  { value: 10, label: "October", days: 31 },
+  { value: 11, label: "November", days: 30 },
+  { value: 12, label: "December", days: 31 }
+];
 function formatBirthday(mmdd) {
   const [month, day] = mmdd.split("-").map(Number);
   return `${MONTH_NAMES[month - 1]} ${day}`;
@@ -68,8 +83,20 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
   const canvasRef = useRef(null);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(submission.name);
-  const [editBirthday, setEditBirthday] = useState(submission.birthday);
+  const [editMonth, setEditMonth] = useState(String(Number(submission.birthday.split("-")[0])));
+  const [editDay, setEditDay] = useState(String(Number(submission.birthday.split("-")[1])));
   const [busy, setBusy] = useState(false);
+
+  const editDayOptions = useMemo(() => {
+    const monthMeta = MONTHS.find((m) => String(m.value) === editMonth) || MONTHS[0];
+    return Array.from({ length: monthMeta.days }, (_, i) => String(i + 1));
+  }, [editMonth]);
+
+  useEffect(() => {
+    if (!editDayOptions.includes(editDay)) {
+      setEditDay(editDayOptions[editDayOptions.length - 1]);
+    }
+  }, [editDay, editDayOptions]);
   const [queuedMsg, setQueuedMsg] = useState("");
   const [error, setError] = useState("");
 
@@ -84,7 +111,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/submissions/${submission.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
-        body: JSON.stringify({ name: editName, birthday: editBirthday }),
+        body: JSON.stringify({ name: editName, birthday: `${String(editMonth).padStart(2, "0")}-${String(editDay).padStart(2, "0")}` }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -145,13 +172,24 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Name"
             />
-            <input
-              className="train-edit-input"
-              value={editBirthday}
-              onChange={(e) => setEditBirthday(e.target.value)}
-              placeholder="MM-DD"
-              maxLength={5}
-            />
+            <div className="birthday-row">
+              <label className="select-wrap">
+                <span className="sr-only">Month</span>
+                <select value={editMonth} onChange={(e) => setEditMonth(e.target.value)}>
+                  {MONTHS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="select-wrap">
+                <span className="sr-only">Day</span>
+                <select value={editDay} onChange={(e) => setEditDay(e.target.value)}>
+                  {editDayOptions.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             {error && <span className="train-card-error">{error}</span>}
             <div className="train-card-actions">
               <button className="subtle-btn" onClick={handleSave} disabled={busy}>Save</button>

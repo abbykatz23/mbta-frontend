@@ -952,19 +952,19 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
             </div>
 
             <div className="canvas-wrap">
-              <canvas
-                ref={canvasRef}
-                id="pixel-canvas"
-                width={780}
-                height={150}
-                aria-label="Train pixel canvas"
-                role="img"
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-              />
-              <div className="canvas-direction-labels">
-                <span>← back</span>
-                <span>front →</span>
+              <div className="canvas-with-labels">
+                <div className="direction-label direction-back">← back</div>
+                <canvas
+                  ref={canvasRef}
+                  id="pixel-canvas"
+                  width={780}
+                  height={150}
+                  aria-label="Train pixel canvas"
+                  role="img"
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                />
+                <div className="direction-label direction-front">front →</div>
               </div>
             </div>
 
