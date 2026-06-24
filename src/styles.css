@@ -665,6 +665,25 @@ button:disabled {
   font-size: 0.82rem;
 }
 
+.submit-btn {
+  background: #111;
+  color: #fff;
+  padding: 0.65rem 2.2rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.07em;
+  animation: submit-glow 5s ease-in-out infinite;
+}
+
+.submit-btn:hover {
+  filter: brightness(1.18);
+}
+
+.submit-btn:disabled {
+  animation: none;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
 .show-now-btn {
   border-color: var(--mbta-green);
   background: color-mix(in srgb, var(--mbta-green) 18%, #111111);
@@ -700,6 +719,25 @@ button:disabled {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+@keyframes submit-glow {
+  0%, 100% {
+    border-color: var(--mbta-red);
+    box-shadow: 0 0 8px rgba(218, 41, 28, 0.6), 0 0 22px rgba(218, 41, 28, 0.22);
+  }
+  25% {
+    border-color: var(--mbta-orange);
+    box-shadow: 0 0 8px rgba(237, 139, 0, 0.6), 0 0 22px rgba(237, 139, 0, 0.22);
+  }
+  50% {
+    border-color: var(--mbta-green);
+    box-shadow: 0 0 8px rgba(0, 132, 61, 0.6), 0 0 22px rgba(0, 132, 61, 0.22);
+  }
+  75% {
+    border-color: var(--mbta-blue);
+    box-shadow: 0 0 8px rgba(0, 61, 165, 0.6), 0 0 22px rgba(0, 61, 165, 0.22);
+  }
 }
 
 @keyframes rise {
