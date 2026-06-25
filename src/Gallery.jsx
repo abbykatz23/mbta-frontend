@@ -276,17 +276,9 @@ export default function Gallery({ isAdmin }) {
       </section>
 
       {isAdmin && (
-        <section className="card">
-          <label className="field">
-            <span>Admin key</span>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={handleApiKeyChange}
-              placeholder="Enter API key to enable admin actions"
-            />
-          </label>
-        </section>
+        <div className="admin-key-hint">
+          Admin mode — <button className="link-btn" onClick={() => { setApiKey(""); sessionStorage.removeItem("adminKey"); }}>change key</button>
+        </div>
       )}
 
       <section className="card">

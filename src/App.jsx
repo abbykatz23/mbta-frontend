@@ -1005,7 +1005,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
               </div>
             </div>
 
-            <div className="preview-wrap" style={{ visibility: hasPixels ? "visible" : "hidden" }}>
+            <div className="preview-wrap" style={{ display: hasPixels ? undefined : "none" }}>
               <span className="preview-label">{previewCarCount}-car preview</span>
               <canvas
                 ref={previewCanvasRef}
@@ -1017,16 +1017,19 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
           </section>
 
           <div className="flip-rtl-row">
-            <label className="flip-rtl-label">
-              <input
-                type="checkbox"
-                checked={flipRtl}
-                onChange={(e) => setFlipRtl(e.target.checked)}
-              />
-              <span>Mirror when moving left</span>
-            </label>
+            <div className="flip-rtl-control">
+              <label className="flip-toggle">
+                <input
+                  type="checkbox"
+                  checked={flipRtl}
+                  onChange={(e) => setFlipRtl(e.target.checked)}
+                />
+                <span className="flip-toggle-slider" />
+              </label>
+              <span className="flip-rtl-label">Mirror when moving left</span>
+            </div>
             <span className="flip-rtl-hint">Keep on for animals, turn off for text</span>
-            {hasPixels && (
+            {hasPixels && flipRtl && (
               <canvas
                 ref={flipPreviewCanvasRef}
                 className="flip-preview-canvas"
