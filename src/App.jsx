@@ -133,6 +133,8 @@ export default function App() {
   const [tintedBucketIcon, setTintedBucketIcon] = useState(bucketIcon);
   const [submitStatus, setSubmitStatus] = useState(null); // null | "loading" | "success" | "error"
   const [submitError, setSubmitError] = useState("");
+  const [flipRtl, setFlipRtl] = useState(true);
+  const flipPreviewCanvasRef = useRef(null);
   const selectedToolColor = currentColor === TRANSPARENT_COLOR ? "#EFEFEF" : currentColor;
 
   const samples = useMemo(() => buildSamples(), []);
@@ -193,6 +195,20 @@ export default function App() {
 
   const hasPixels = useMemo(() => pixels.some((row) => row.some((cell) => cell !== null)), [pixels]);
 
+  const previewCarCount = useMemo(() => {
+    let left = GRID_WIDTH, right = -1;
+    for (let col = 0; col < GRID_WIDTH; col += 1) {
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        if (pixels[row][col] !== null) {
+          if (col < left) left = col;
+          if (col > right) right = col;
+        }
+      }
+    }
+    if (right === -1) return 3;
+    return (right - left + 1) < 10 ? 5 : 3;
+  }, [pixels]);
+
   useEffect(() => {
     const canvas = previewCanvasRef.current;
     if (!canvas) return;
@@ -217,14 +233,15 @@ export default function App() {
     }
 
     const W = right - left + 1;
-    const totalCols = 3 * W + 2;
+    const carCount = W < 10 ? 5 : 3;
+    const totalCols = carCount * W + (carCount - 1);
     canvas.width = totalCols * PREVIEW_PIXEL_SIZE;
     canvas.height = GRID_HEIGHT * PREVIEW_PIXEL_SIZE;
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const assembled = Array.from({ length: GRID_HEIGHT }, () => new Array(totalCols).fill(null));
-    for (let carIdx = 0; carIdx < 3; carIdx += 1) {
+    for (let carIdx = 0; carIdx < carCount; carIdx += 1) {
       const xOffset = carIdx * (W + 1);
       for (let row = 0; row < GRID_HEIGHT; row += 1) {
         for (let col = left; col <= right; col += 1) {
@@ -233,7 +250,8 @@ export default function App() {
       }
     }
 
-    for (const linkX of [W, 2 * W + 1]) {
+    const linkPositions = Array.from({ length: carCount - 1 }, (_, i) => (i + 1) * W + i);
+    for (const linkX of linkPositions) {
       assembled[LINK_ROW][linkX] = LINK_COLOR;
       for (let col = linkX - 1; col >= 0 && assembled[LINK_ROW][col] === null; col -= 1) {
         assembled[LINK_ROW][col] = LINK_COLOR;
@@ -249,6 +267,23 @@ export default function App() {
         if (!color) continue;
         ctx.fillStyle = color;
         ctx.fillRect(col * PREVIEW_PIXEL_SIZE, row * PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE);
+      }
+    }
+
+    const flipCanvas = flipPreviewCanvasRef.current;
+    if (flipCanvas) {
+      flipCanvas.width = W * PREVIEW_PIXEL_SIZE;
+      flipCanvas.height = GRID_HEIGHT * PREVIEW_PIXEL_SIZE;
+      const fCtx = flipCanvas.getContext("2d");
+      fCtx.imageSmoothingEnabled = false;
+      fCtx.clearRect(0, 0, flipCanvas.width, flipCanvas.height);
+      for (let row = 0; row < GRID_HEIGHT; row += 1) {
+        for (let col = left; col <= right; col += 1) {
+          const color = pixels[row][col];
+          if (!color) continue;
+          fCtx.fillStyle = color;
+          fCtx.fillRect((right - col) * PREVIEW_PIXEL_SIZE, row * PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE);
+        }
       }
     }
   }, [pixels]);
@@ -563,7 +598,8 @@ export default function App() {
     if (right === -1) { left = 0; right = GRID_WIDTH - 1; }
 
     const W = right - left + 1;
-    const totalCols = 3 * W + 2;
+    const carCount = W < 10 ? 5 : 3;
+    const totalCols = carCount * W + (carCount - 1);
     const offscreen = document.createElement("canvas");
     offscreen.width = totalCols;
     offscreen.height = GRID_HEIGHT;
@@ -573,7 +609,7 @@ export default function App() {
     ctx.clearRect(0, 0, totalCols, GRID_HEIGHT);
 
     const assembled = Array.from({ length: GRID_HEIGHT }, () => new Array(totalCols).fill(null));
-    for (let carIdx = 0; carIdx < 3; carIdx += 1) {
+    for (let carIdx = 0; carIdx < carCount; carIdx += 1) {
       const xOffset = carIdx * (W + 1);
       for (let row = 0; row < GRID_HEIGHT; row += 1) {
         for (let col = left; col <= right; col += 1) {
@@ -581,7 +617,8 @@ export default function App() {
         }
       }
     }
-    for (const linkX of [W, 2 * W + 1]) {
+    const linkPositions = Array.from({ length: carCount - 1 }, (_, i) => (i + 1) * W + i);
+    for (const linkX of linkPositions) {
       assembled[LINK_ROW][linkX] = LINK_COLOR;
       for (let col = linkX - 1; col >= 0 && assembled[LINK_ROW][col] === null; col -= 1) {
         assembled[LINK_ROW][col] = LINK_COLOR;
@@ -623,7 +660,8 @@ export default function App() {
     const payload = {
       name: name.trim(),
       birthday: getBirthdayString(),
-      pngData: getPngDataUrl()
+      pngData: getPngDataUrl(),
+      flip_rtl: flipRtl
     };
 
     setSubmitStatus("loading");
@@ -655,6 +693,7 @@ export default function App() {
     sampleIndexRef.current = -1;
     setSubmitStatus(null);
     setSubmitError("");
+    setFlipRtl(true);
   }
 
   function normalizeColor(hexColor) {
@@ -966,18 +1005,36 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
               </div>
             </div>
 
-            {hasPixels && (
-              <div className="preview-wrap">
-                <span className="preview-label">3-car preview</span>
-                <canvas
-                  ref={previewCanvasRef}
-                  className="preview-canvas"
-                  aria-label="3-car train preview"
-                  role="img"
-                />
-              </div>
-            )}
+            <div className="preview-wrap" style={{ visibility: hasPixels ? "visible" : "hidden" }}>
+              <span className="preview-label">{previewCarCount}-car preview</span>
+              <canvas
+                ref={previewCanvasRef}
+                className="preview-canvas"
+                aria-label="multi-car train preview"
+                role="img"
+              />
+            </div>
           </section>
+
+          <div className="flip-rtl-row">
+            <label className="flip-rtl-label">
+              <input
+                type="checkbox"
+                checked={flipRtl}
+                onChange={(e) => setFlipRtl(e.target.checked)}
+              />
+              <span>Mirror when moving left</span>
+            </label>
+            <span className="flip-rtl-hint">Keep on for animals, turn off for text</span>
+            {hasPixels && (
+              <canvas
+                ref={flipPreviewCanvasRef}
+                className="flip-preview-canvas"
+                aria-label="Flipped single-car preview"
+                role="img"
+              />
+            )}
+          </div>
 
           <div className="submit-row">
             <button id="download-png" type="button" className="subtle-btn" onClick={downloadPng}>

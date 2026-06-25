@@ -23,10 +23,11 @@ function assembleAndDraw(canvas, pngBase64) {
     tempCtx.drawImage(img, 0, 0);
     const { data } = tempCtx.getImageData(0, 0, w, h);
 
-    const totalCols = 3 * w + 2;
+    const carCount = w < 10 ? 5 : 3;
+    const totalCols = carCount * w + (carCount - 1);
     const assembled = Array.from({ length: h }, () => new Array(totalCols).fill(null));
 
-    for (let carIdx = 0; carIdx < 3; carIdx += 1) {
+    for (let carIdx = 0; carIdx < carCount; carIdx += 1) {
       const xOffset = carIdx * (w + 1);
       for (let row = 0; row < h; row += 1) {
         for (let col = 0; col < w; col += 1) {
@@ -38,7 +39,8 @@ function assembleAndDraw(canvas, pngBase64) {
       }
     }
 
-    for (const linkX of [w, 2 * w + 1]) {
+    const linkPositions = Array.from({ length: carCount - 1 }, (_, i) => (i + 1) * w + i);
+    for (const linkX of linkPositions) {
       assembled[LINK_ROW][linkX] = LINK_COLOR;
       for (let col = linkX - 1; col >= 0 && assembled[LINK_ROW][col] === null; col -= 1) {
         assembled[LINK_ROW][col] = LINK_COLOR;
@@ -72,6 +74,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
   const [editName, setEditName] = useState(submission.name);
   const [editMonth, setEditMonth] = useState(String(Number(submission.birthday.split("-")[0])));
   const [editDay, setEditDay] = useState(String(Number(submission.birthday.split("-")[1])));
+  const [editFlipRtl, setEditFlipRtl] = useState(submission.flip_rtl !== false);
   const [busy, setBusy] = useState(false);
 
   const editDayOptions = useMemo(() => {
@@ -98,7 +101,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/submissions/${submission.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
-        body: JSON.stringify({ name: editName, birthday: `${String(editMonth).padStart(2, "0")}-${String(editDay).padStart(2, "0")}` }),
+        body: JSON.stringify({ name: editName, birthday: `${String(editMonth).padStart(2, "0")}-${String(editDay).padStart(2, "0")}`, flip_rtl: editFlipRtl }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -182,6 +185,14 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
                 </select>
               </label>
             </div>
+            <label className="flip-rtl-label">
+              <input
+                type="checkbox"
+                checked={editFlipRtl}
+                onChange={(e) => setEditFlipRtl(e.target.checked)}
+              />
+              <span>Mirror when moving left</span>
+            </label>
             {error && <span className="train-card-error">{error}</span>}
             <div className="train-card-actions">
               <button className="subtle-btn" onClick={handleSave} disabled={busy}>Save</button>
@@ -192,6 +203,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
           <>
             <span className="train-card-name">{submission.name}</span>
             <span className="train-card-birthday">{formatBirthday(submission.birthday)}</span>
+            {submission.flip_rtl === false && <span className="train-card-no-mirror">no mirror</span>}
             {error && <span className="train-card-error">{error}</span>}
             {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
             {isAdmin && (
