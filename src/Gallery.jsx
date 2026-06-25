@@ -225,12 +225,28 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
 const MONTH_LABELS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function MonthTrainCard({ train, isAdmin, apiKey }) {
+  const canvasRef = useRef(null);
   const [queuedMsg, setQueuedMsg] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const currentMonth = new Date().getMonth() + 1;
   const isCurrentMonth = train.birthday_month === currentMonth;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width * CARD_SCALE;
+      canvas.height = img.height * CARD_SCALE;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = `/month_trains/${train.name}.png`;
+  }, [train.name]);
 
   async function handleQueue() {
     setBusy(true);
@@ -251,11 +267,14 @@ function MonthTrainCard({ train, isAdmin, apiKey }) {
 
   return (
     <div className={`train-card month-train-card${isCurrentMonth ? " month-train-card--active" : ""}`}>
-      <div className="month-train-visual">
-        <span className="month-train-month-label">{MONTH_LABELS[train.birthday_month - 1]}</span>
-        {isCurrentMonth && <span className="month-train-active-badge">active now</span>}
+      <div className="train-card-canvas-wrap">
+        <canvas ref={canvasRef} className="train-card-canvas" />
       </div>
       <div className="train-card-body">
+        <span className="train-card-name">
+          {train.birthday_month ? MONTH_LABELS[train.birthday_month - 1] : train.name.charAt(0).toUpperCase() + train.name.slice(1)}
+          {isCurrentMonth && <span className="month-train-active-badge">active now</span>}
+        </span>
         {error && <span className="train-card-error">{error}</span>}
         {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
         {isAdmin && (
@@ -290,7 +309,12 @@ export default function Gallery({ isAdmin }) {
   useEffect(() => {
     fetch(`${import.meta.env.VITE_SERVER_URL}/special-trains`)
       .then((r) => r.json())
-      .then((data) => setSpecialTrains(data.sort((a, b) => a.birthday_month - b.birthday_month)))
+      .then((data) => setSpecialTrains(data.sort((a, b) => {
+        if (a.birthday_month && b.birthday_month) return a.birthday_month - b.birthday_month;
+        if (a.birthday_month) return -1;
+        if (b.birthday_month) return 1;
+        return a.name.localeCompare(b.name);
+      })))
       .catch(() => {});
   }, []);
 
@@ -311,10 +335,13 @@ export default function Gallery({ isAdmin }) {
           <label className="field">
             <span>Admin key</span>
             <input
-              type="password"
+              type="text"
               value={apiKey}
               onChange={handleApiKeyChange}
               placeholder="Enter API key"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
               autoFocus
             />
           </label>

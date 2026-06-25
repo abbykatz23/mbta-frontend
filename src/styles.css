@@ -788,24 +788,11 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.month-train-visual {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 0.85rem;
-  background: linear-gradient(135deg, #081408 0%, #0d1a0d 100%);
-  border-bottom: 1px solid var(--line);
-  min-height: 48px;
-}
-
-.month-train-month-label {
-  font: 700 1rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: var(--text);
-  letter-spacing: 0.03em;
-}
-
 .month-train-active-badge {
-  font: 700 0.62rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.45rem;
+  font: 700 0.58rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--mbta-green);
@@ -815,10 +802,6 @@ button:disabled {
 
 .month-train-card--active {
   border-color: color-mix(in srgb, var(--mbta-green) 40%, var(--line));
-}
-
-.month-train-card--active .month-train-visual {
-  background: linear-gradient(135deg, #091909 0%, #0e2a0e 100%);
 }
 
 .submit-row {

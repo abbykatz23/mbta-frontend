@@ -206,7 +206,7 @@ export default function App() {
       }
     }
     if (right === -1) return 3;
-    return (right - left + 1) < 10 ? 5 : 3;
+    return (right - left + 1) < 15 ? 5 : 3;
   }, [pixels]);
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export default function App() {
     }
 
     const W = right - left + 1;
-    const carCount = W < 10 ? 5 : 3;
+    const carCount = W < 15 ? 5 : 3;
     const totalCols = carCount * W + (carCount - 1);
     canvas.width = totalCols * PREVIEW_PIXEL_SIZE;
     canvas.height = GRID_HEIGHT * PREVIEW_PIXEL_SIZE;
@@ -598,7 +598,7 @@ export default function App() {
     if (right === -1) { left = 0; right = GRID_WIDTH - 1; }
 
     const W = right - left + 1;
-    const carCount = W < 10 ? 5 : 3;
+    const carCount = W < 15 ? 5 : 3;
     const totalCols = carCount * W + (carCount - 1);
     const offscreen = document.createElement("canvas");
     offscreen.width = totalCols;
