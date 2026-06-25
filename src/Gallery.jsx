@@ -277,7 +277,7 @@ export default function Gallery({ isAdmin }) {
 
       {isAdmin && (
         <div className="admin-key-hint">
-          Admin mode — <button className="link-btn" onClick={() => { setApiKey(""); sessionStorage.removeItem("adminKey"); }}>change key</button>
+          Admin mode — <button className="link-btn" onClick={() => { setApiKey(""); sessionStorage.removeItem("adminKey"); }}>exit admin mode</button>
         </div>
       )}
 
