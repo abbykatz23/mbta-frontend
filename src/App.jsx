@@ -1048,7 +1048,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
           </div>
           {submitStatus === "success" && (
             <div className="submit-success">
-              <p>Submitted! Your train will appear on the display within 24 hours.</p>
+              <p>Your train has been successfully submitted!</p>
               <button type="button" className="subtle-btn" onClick={handleDesignAnother}>
                 Design another
               </button>

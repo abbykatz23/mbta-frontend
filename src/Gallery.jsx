@@ -143,7 +143,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
         method: "POST",
         headers: { "X-API-Key": apiKey },
       });
-      if (!res.ok) throw new Error("Queue failed");
+      if (!res.ok) throw new Error(`Queue failed (${res.status})`);
       setQueuedMsg("Queued! It'll show on the next train animation.");
       setTimeout(() => setQueuedMsg(""), 6000);
     } catch (err) {
@@ -222,8 +222,57 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
   );
 }
 
+const MONTH_LABELS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+function MonthTrainCard({ train, isAdmin, apiKey }) {
+  const [queuedMsg, setQueuedMsg] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const currentMonth = new Date().getMonth() + 1;
+  const isCurrentMonth = train.birthday_month === currentMonth;
+
+  async function handleQueue() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/queue-special/${train.name}`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey },
+      });
+      if (!res.ok) throw new Error(`Queue failed (${res.status})`);
+      setQueuedMsg("Queued! It'll show on the next train animation.");
+      setTimeout(() => setQueuedMsg(""), 6000);
+    } catch (err) {
+      setError(err.message);
+    }
+    setBusy(false);
+  }
+
+  return (
+    <div className={`train-card month-train-card${isCurrentMonth ? " month-train-card--active" : ""}`}>
+      <div className="month-train-visual">
+        <span className="month-train-month-label">{MONTH_LABELS[train.birthday_month - 1]}</span>
+        {isCurrentMonth && <span className="month-train-active-badge">active now</span>}
+      </div>
+      <div className="train-card-body">
+        {error && <span className="train-card-error">{error}</span>}
+        {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
+        {isAdmin && (
+          <div className="train-card-actions">
+            <button className="subtle-btn show-now-btn" onClick={handleQueue} disabled={busy || !apiKey}>
+              Show Now
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Gallery({ isAdmin }) {
   const [submissions, setSubmissions] = useState([]);
+  const [specialTrains, setSpecialTrains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("adminKey") || "");
@@ -237,6 +286,13 @@ export default function Gallery({ isAdmin }) {
   }
 
   useEffect(() => { fetchSubmissions(); }, []);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_SERVER_URL}/special-trains`)
+      .then((r) => r.json())
+      .then((data) => setSpecialTrains(data.sort((a, b) => a.birthday_month - b.birthday_month)))
+      .catch(() => {});
+  }, []);
 
   function handleDelete(id) {
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
@@ -300,6 +356,23 @@ export default function Gallery({ isAdmin }) {
           ))}
         </div>
       </section>
+
+      {specialTrains.length > 0 && (
+        <section className="card">
+          <p className="month-trains-heading">Month Trains</p>
+          <p className="subtitle" style={{ marginBottom: "1rem" }}>Special trains that show up randomly during their month.</p>
+          <div className="gallery-grid">
+            {specialTrains.map((t) => (
+              <MonthTrainCard
+                key={t.name}
+                train={t}
+                isAdmin={isAdmin}
+                apiKey={apiKey}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
