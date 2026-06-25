@@ -1,28 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { MONTH_NAMES, MONTHS } from "./constants";
 
 const LINK_ROW = 3;
 const LINK_COLOR = "#464646";
 const CARD_SCALE = 8;
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const MONTHS = [
-  { value: 1, label: "January", days: 31 },
-  { value: 2, label: "February", days: 29 },
-  { value: 3, label: "March", days: 31 },
-  { value: 4, label: "April", days: 30 },
-  { value: 5, label: "May", days: 31 },
-  { value: 6, label: "June", days: 30 },
-  { value: 7, label: "July", days: 31 },
-  { value: 8, label: "August", days: 31 },
-  { value: 9, label: "September", days: 30 },
-  { value: 10, label: "October", days: 31 },
-  { value: 11, label: "November", days: 30 },
-  { value: 12, label: "December", days: 31 }
-];
 function formatBirthday(mmdd) {
+  if (!mmdd) return "";
   const [month, day] = mmdd.split("-").map(Number);
-  return `${MONTH_NAMES[month - 1]} ${day}`;
+  const monthName = MONTH_NAMES[month - 1] ?? "?";
+  return `${monthName} ${day}`;
 }
 
 function assembleAndDraw(canvas, pngBase64) {
@@ -129,13 +116,18 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
     if (!window.confirm(`Delete ${submission.name}'s train?`)) return;
     setBusy(true);
     try {
-      await fetch(`${import.meta.env.VITE_SERVER_URL}/submissions/${submission.id}`, {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/submissions/${submission.id}`, {
         method: "DELETE",
         headers: { "X-API-Key": apiKey },
       });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || "Delete failed");
+      }
+      setBusy(false);
       onDelete(submission.id);
-    } catch {
-      setError("Delete failed");
+    } catch (err) {
+      setError(err.message);
       setBusy(false);
     }
   }
@@ -204,11 +196,11 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
             {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
             {isAdmin && (
               <div className="train-card-actions">
-                <button className="subtle-btn" onClick={() => setEditing(true)} disabled={busy}>Edit</button>
-                <button className="subtle-btn show-now-btn" onClick={handleQueue} disabled={busy}>
+                <button className="subtle-btn" onClick={() => setEditing(true)} disabled={busy || !apiKey}>Edit</button>
+                <button className="subtle-btn show-now-btn" onClick={handleQueue} disabled={busy || !apiKey}>
                   Show Now
                 </button>
-                <button className="subtle-btn delete-btn" onClick={handleDelete} disabled={busy}>Delete</button>
+                <button className="subtle-btn delete-btn" onClick={handleDelete} disabled={busy || !apiKey}>Delete</button>
               </div>
             )}
           </>
@@ -222,12 +214,12 @@ export default function Gallery({ isAdmin }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const apiKey = import.meta.env.VITE_PI_API_KEY || "";
+  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("adminKey") || "");
 
   function fetchSubmissions() {
     setLoading(true);
     fetch(`${import.meta.env.VITE_SERVER_URL}/submissions`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`Server error (${r.status})`); return r.json(); })
       .then((data) => { setSubmissions(data); setLoading(false); })
       .catch(() => { setError("Failed to load trains."); setLoading(false); });
   }
@@ -238,6 +230,31 @@ export default function Gallery({ isAdmin }) {
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
   }
 
+  function handleApiKeyChange(e) {
+    const val = e.target.value;
+    setApiKey(val);
+    sessionStorage.setItem("adminKey", val);
+  }
+
+  if (isAdmin && !apiKey) {
+    return (
+      <main className="page-shell">
+        <section className="card">
+          <label className="field">
+            <span>Admin key</span>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={handleApiKeyChange}
+              placeholder="Enter API key"
+              autoFocus
+            />
+          </label>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="page-shell">
       <section className="hero">
@@ -246,6 +263,19 @@ export default function Gallery({ isAdmin }) {
         <a href="/" className="gallery-nav-btn">← Design your own</a>
       </section>
 
+      {isAdmin && (
+        <section className="card">
+          <label className="field">
+            <span>Admin key</span>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={handleApiKeyChange}
+              placeholder="Enter API key to enable admin actions"
+            />
+          </label>
+        </section>
+      )}
 
       <section className="card">
         {loading && <p className="gallery-loading">Loading trains…</p>}

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import bucketIcon from "./static/bucket.png";
+import { MONTHS } from "./constants";
 
 const GRID_WIDTH = 26;
 const GRID_HEIGHT = 5;
@@ -22,21 +23,6 @@ const CURSOR_FILL = makeSvgCursor(
   "M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15c-.59.59-.59 1.54 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.58-.58.58-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z",
   2, 20
 );
-
-const MONTHS = [
-  { value: 1, label: "January", days: 31 },
-  { value: 2, label: "February", days: 29 },
-  { value: 3, label: "March", days: 31 },
-  { value: 4, label: "April", days: 30 },
-  { value: 5, label: "May", days: 31 },
-  { value: 6, label: "June", days: 30 },
-  { value: 7, label: "July", days: 31 },
-  { value: 8, label: "August", days: 31 },
-  { value: 9, label: "September", days: 30 },
-  { value: 10, label: "October", days: 31 },
-  { value: 11, label: "November", days: 30 },
-  { value: 12, label: "December", days: 31 }
-];
 
 const DEFAULT_PALETTE = ["#DA291C", "#ED8B00", "#00843D", "#003DA5"];
 const SAMPLE_COLORS = {
@@ -142,7 +128,7 @@ export default function App() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [pendingDeleteColor, setPendingDeleteColor] = useState(null);
   const [pixels, setPixels] = useState(makeEmptyPixels);
-  const [sampleIndex, setSampleIndex] = useState(-1);
+  const sampleIndexRef = useRef(-1);
   const [undoStack, setUndoStack] = useState([]);
   const [tintedBucketIcon, setTintedBucketIcon] = useState(bucketIcon);
   const [submitStatus, setSubmitStatus] = useState(null); // null | "loading" | "success" | "error"
@@ -285,7 +271,7 @@ export default function App() {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [undoLastChange]);
 
   useEffect(() => {
     if (!showColorPicker) {
@@ -421,13 +407,13 @@ export default function App() {
       return;
     }
 
-    if (currentTool === "paint" && !currentColor) {
+    if (!currentColor) {
       return;
     }
 
     setPixels((previous) => {
       const next = clonePixels(previous);
-      next[row][col] = currentTool === "erase" || currentColor === TRANSPARENT_COLOR ? null : currentColor;
+      next[row][col] = currentColor === TRANSPARENT_COLOR ? null : currentColor;
       return next;
     });
   }
@@ -448,7 +434,7 @@ export default function App() {
       return;
     }
 
-    const replacementColor = currentTool === "erase" || currentColor === TRANSPARENT_COLOR ? null : currentColor;
+    const replacementColor = currentColor === TRANSPARENT_COLOR ? null : currentColor;
 
     setPixels((previous) => {
       const next = clonePixels(previous);
@@ -504,23 +490,17 @@ export default function App() {
   }
 
   function undoLastChange() {
-    setUndoStack((previous) => {
-      if (previous.length === 0) {
-        return previous;
-      }
-      const restored = previous[previous.length - 1];
-      setPixels(clonePixels(restored));
-      return previous.slice(0, -1);
-    });
+    if (undoStack.length === 0) return;
+    const restored = undoStack[undoStack.length - 1];
+    setPixels(clonePixels(restored));
+    setUndoStack((prev) => prev.slice(0, -1));
   }
 
   function cycleSampleTrain() {
     pushUndoSnapshot();
-    setSampleIndex((previous) => {
-      const next = (previous + 1) % samples.length;
-      setPixels(clonePixels(samples[next].pixels));
-      return next;
-    });
+    const next = (sampleIndexRef.current + 1) % samples.length;
+    sampleIndexRef.current = next;
+    setPixels(clonePixels(samples[next].pixels));
   }
 
   function getBirthdayString() {
@@ -672,7 +652,7 @@ export default function App() {
     setPixels(makeEmptyPixels());
     setName("");
     setUndoStack([]);
-    setSampleIndex(-1);
+    sampleIndexRef.current = -1;
     setSubmitStatus(null);
     setSubmitError("");
   }
@@ -714,18 +694,12 @@ export default function App() {
     });
     setCurrentColor(nextColor);
     setPickerColor(nextColor);
-    if (currentTool === "erase") {
-      setCurrentTool("paint");
-    }
     setPendingDeleteColor(null);
   }
 
   function handlePaletteSelect(color) {
     setCurrentColor(color);
     setPickerColor(color);
-    if (currentTool === "erase") {
-      setCurrentTool("paint");
-    }
     setPendingDeleteColor(null);
   }
 
@@ -928,7 +902,6 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
                           const color = rgbToHex(draftRgb.r, draftRgb.g, draftRgb.b);
                           setDraftColor(color);
                           setCurrentColor(color);
-                          if (currentTool === "erase") setCurrentTool("paint");
                         }}
                       />
                     </label>
@@ -942,7 +915,6 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
                           const color = normalizeColor(event.target.value);
                           setDraftColor(color);
                           setCurrentColor(color);
-                          if (currentTool === "erase") setCurrentTool("paint");
                         }}
                       />
                     </label>
@@ -986,7 +958,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
                   height={150}
                   aria-label="Train pixel canvas"
                   role="img"
-                  style={{ cursor: currentTool === "erase" ? "cell" : currentTool === "fill" ? CURSOR_FILL : CURSOR_PAINT }}
+                  style={{ cursor: currentTool === "fill" ? CURSOR_FILL : CURSOR_PAINT }}
                   onPointerDown={handlePointerDown}
                   onPointerMove={handlePointerMove}
                 />
