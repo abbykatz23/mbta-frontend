@@ -272,21 +272,21 @@ export default function App() {
 
     const flipCanvas = flipPreviewCanvasRef.current;
     if (flipCanvas) {
-      flipCanvas.width = W * PREVIEW_PIXEL_SIZE;
+      flipCanvas.width = totalCols * PREVIEW_PIXEL_SIZE;
       flipCanvas.height = GRID_HEIGHT * PREVIEW_PIXEL_SIZE;
       const fCtx = flipCanvas.getContext("2d");
       fCtx.imageSmoothingEnabled = false;
       fCtx.clearRect(0, 0, flipCanvas.width, flipCanvas.height);
       for (let row = 0; row < GRID_HEIGHT; row += 1) {
-        for (let col = left; col <= right; col += 1) {
-          const color = pixels[row][col];
+        for (let col = 0; col < totalCols; col += 1) {
+          const color = assembled[row][col];
           if (!color) continue;
           fCtx.fillStyle = color;
-          fCtx.fillRect((right - col) * PREVIEW_PIXEL_SIZE, row * PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE);
+          fCtx.fillRect((totalCols - 1 - col) * PREVIEW_PIXEL_SIZE, row * PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE, PREVIEW_PIXEL_SIZE);
         }
       }
     }
-  }, [pixels]);
+  }, [pixels, flipRtl]);
 
   useEffect(() => {
     const endDrawing = () => {
@@ -1029,14 +1029,13 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
               <span className="flip-rtl-label">Mirror when moving left</span>
             </div>
             <span className="flip-rtl-hint">Keep on for animals, turn off for text</span>
-            {hasPixels && flipRtl && (
-              <canvas
-                ref={flipPreviewCanvasRef}
-                className="flip-preview-canvas"
-                aria-label="Flipped single-car preview"
-                role="img"
-              />
-            )}
+            <canvas
+              ref={flipPreviewCanvasRef}
+              className="flip-preview-canvas"
+              style={{ display: hasPixels && flipRtl ? undefined : "none" }}
+              aria-label="Flipped multi-car preview"
+              role="img"
+            />
           </div>
 
           <div className="submit-row">
