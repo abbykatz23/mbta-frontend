@@ -224,11 +224,12 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
 
 const MONTH_LABELS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-function MonthTrainCard({ train, isAdmin, apiKey }) {
+function SpecialTrainCard({ train, isAdmin, apiKey }) {
   const canvasRef = useRef(null);
   const [queuedMsg, setQueuedMsg] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [flipRtl, setFlipRtl] = useState(Boolean(train.flip_rtl));
 
   const currentMonth = new Date().getMonth() + 1;
   const isCurrentMonth = train.birthday_month === currentMonth;
@@ -265,6 +266,27 @@ function MonthTrainCard({ train, isAdmin, apiKey }) {
     setBusy(false);
   }
 
+  async function handleFlipToggle(e) {
+    const next = e.target.checked;
+    setFlipRtl(next);
+    setError("");
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/special-trains/${train.name}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        body: JSON.stringify({ flip_rtl: next }),
+      });
+      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+    } catch (err) {
+      setError(err.message);
+      setFlipRtl(!next);
+    }
+  }
+
+  const label = train.birthday_month
+    ? MONTH_LABELS[train.birthday_month - 1]
+    : train.name.charAt(0).toUpperCase() + train.name.slice(1);
+
   return (
     <div className={`train-card month-train-card${isCurrentMonth ? " month-train-card--active" : ""}`}>
       <div className="train-card-canvas-wrap">
@@ -272,17 +294,24 @@ function MonthTrainCard({ train, isAdmin, apiKey }) {
       </div>
       <div className="train-card-body">
         <span className="train-card-name">
-          {train.birthday_month ? MONTH_LABELS[train.birthday_month - 1] : train.name.charAt(0).toUpperCase() + train.name.slice(1)}
+          {label}
           {isCurrentMonth && <span className="month-train-active-badge">active now</span>}
         </span>
+        {train.birthday && <span className="train-card-birthday">{formatBirthday(train.birthday)}</span>}
         {error && <span className="train-card-error">{error}</span>}
         {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
         {isAdmin && (
-          <div className="train-card-actions">
-            <button className="subtle-btn show-now-btn" onClick={handleQueue} disabled={busy || !apiKey}>
-              Show Now
-            </button>
-          </div>
+          <>
+            <label className="flip-rtl-label">
+              <input type="checkbox" checked={flipRtl} onChange={handleFlipToggle} disabled={!apiKey} />
+              <span>Mirror when moving left</span>
+            </label>
+            <div className="train-card-actions">
+              <button className="subtle-btn show-now-btn" onClick={handleQueue} disabled={busy || !apiKey}>
+                Show Now
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -317,6 +346,9 @@ export default function Gallery({ isAdmin }) {
       })))
       .catch(() => {});
   }, []);
+
+  const monthTrains = specialTrains.filter((t) => t.birthday_month);
+  const otherSpecialTrains = specialTrains.filter((t) => !t.birthday_month);
 
   function handleDelete(id) {
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
@@ -381,16 +413,24 @@ export default function Gallery({ isAdmin }) {
               onRefresh={fetchSubmissions}
             />
           ))}
+          {otherSpecialTrains.map((t) => (
+            <SpecialTrainCard
+              key={t.name}
+              train={t}
+              isAdmin={isAdmin}
+              apiKey={apiKey}
+            />
+          ))}
         </div>
       </section>
 
-      {specialTrains.length > 0 && (
+      {monthTrains.length > 0 && (
         <section className="card">
           <p className="month-trains-heading">Month Trains</p>
           <p className="subtitle" style={{ marginBottom: "1rem" }}>Special trains that show up randomly during their month.</p>
           <div className="gallery-grid">
-            {specialTrains.map((t) => (
-              <MonthTrainCard
+            {monthTrains.map((t) => (
+              <SpecialTrainCard
                 key={t.name}
                 train={t}
                 isAdmin={isAdmin}
