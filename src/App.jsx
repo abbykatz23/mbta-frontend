@@ -783,6 +783,14 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
       </section>
 
       <section className="card">
+        {submitStatus === "success" ? (
+          <div className="submit-success submit-success--full">
+            <p>Your train has been successfully submitted!</p>
+            <button type="button" className="submit-btn make-another-btn" onClick={handleDesignAnother}>
+              Make another train
+            </button>
+          </div>
+        ) : (
         <form className="submission-form" onSubmit={handleSubmit}>
           <div className="field-grid">
             <label className="field" htmlFor="name">
@@ -1046,18 +1054,11 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
               {submitStatus === "loading" ? "Submitting…" : "Submit"}
             </button>
           </div>
-          {submitStatus === "success" && (
-            <div className="submit-success">
-              <p>Your train has been successfully submitted!</p>
-              <button type="button" className="subtle-btn" onClick={handleDesignAnother}>
-                Design another
-              </button>
-            </div>
-          )}
           {submitStatus === "error" && (
             <p className="submit-error">{submitError}</p>
           )}
         </form>
+        )}
       </section>
     </main>
   );
