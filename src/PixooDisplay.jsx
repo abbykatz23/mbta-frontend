@@ -148,19 +148,19 @@ function drawBackground(ctx) {
 }
 
 function drawLabels(ctx) {
-  drawText(ctx, "union",  0,  -1, sc(C.GREEN, HDR_GB));
-  drawText(ctx, "m/tfts", 23, -1, sc(C.GREEN, HDR_GB));
-  drawText(ctx, "won",    51, -1, sc(C.BLUE,  HDR_GB));
+  drawText(ctx, "union",  0,  -1, C.GREEN);
+  drawText(ctx, "m/tfts", 23, -1, C.GREEN);
+  drawText(ctx, "won",    51, -1, C.BLUE);
 
-  drawText(ctx, "B",   6,  23, sc(C.GREEN,  HDR_GB));
-  drawText(ctx, "C",   22, 23, sc(C.GREEN,  HDR_GB));
-  drawText(ctx, "ALE", 34, 23, sc(C.RED,    HEADER_BG));
-  drawText(ctx, "OAK", 50, 23, sc(C.ORANGE, HEADER_BG));
+  drawText(ctx, "B",   6,  23, C.GREEN);
+  drawText(ctx, "C",   22, 23, C.GREEN);
+  drawText(ctx, "ALE", 34, 23, C.RED);
+  drawText(ctx, "OAK", 50, 23, C.ORANGE);
 
-  drawText(ctx, "D",   6,  47, sc(C.GREEN,  HDR_GB));
-  drawText(ctx, "E",   22, 47, sc(C.GREEN,  HDR_GB));
-  drawText(ctx, "ASH", 34, 47, sc(C.RED,    HEADER_BG));
-  drawText(ctx, "FOR", 50, 47, sc(C.ORANGE, HEADER_BG));
+  drawText(ctx, "D",   6,  47, C.GREEN);
+  drawText(ctx, "E",   22, 47, C.GREEN);
+  drawText(ctx, "ASH", 34, 47, C.RED);
+  drawText(ctx, "FOR", 50, 47, C.ORANGE);
 }
 
 function drawPredictions(ctx, p) {
@@ -270,54 +270,91 @@ export default function PixooDisplay() {
     ctx.drawImage(bg, 0, 0);
   }, []);
 
-  // Run a train animation for a single arrival
-  const runAnimation = useCallback(async (arrival) => {
-    const laneY = arrival.lane === "bottom_right" ? 41 : 17;
-    const ltr = arrival.direction === "left_to_right";
+  const runArrivals = useCallback(async (arrivals) => {
+    if (!arrivals || arrivals.length === 0) return;
 
-    const img = arrival.sprite_b64
-      ? await loadImage(`data:image/png;base64,${arrival.sprite_b64}`)
-      : await loadImage(spriteUrl(arrival.colors));
-    const sw = img ? img.naturalWidth : 26;
+    // Load all sprites up front
+    const loaded = await Promise.all(arrivals.map(async (arrival) => {
+      const img = arrival.sprite_b64
+        ? await loadImage(`data:image/png;base64,${arrival.sprite_b64}`)
+        : await loadImage(spriteUrl(arrival.colors));
+      const sw = img ? img.naturalWidth : 26;
+      const ltr = arrival.direction === "left_to_right";
+      const laneY = arrival.lane === "bottom_right" ? 41 : 17;
+      // +1 so sprite fully exits before stopping (matches Python range)
+      const positions = ltr
+        ? Array.from({ length: sw + W + 1 }, (_, i) => -sw + i)
+        : Array.from({ length: sw + W + 1 }, (_, i) => W - i);
+      return { ...arrival, img, sw, ltr, laneY, positions };
+    }));
 
-    const positions = ltr
-      ? Array.from({ length: sw + W }, (_, i) => -sw + i)
-      : Array.from({ length: sw + W }, (_, i) => W - i);
+    // Blink exclamations (all lanes together, single background repaint per blink)
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (ctx) {
+      for (let b = 0; b < 3; b++) {
+        ctx.drawImage(bgRef.current, 0, 0);
+        for (const a of loaded) {
+          const color = a.colors.length ? COLOR_MAP[a.colors[0]] || C.GREEN : C.GREEN;
+          ctx.fillStyle = rgb(color);
+          const ax = a.lane === "bottom_right" ? 62 : 2;
+          ctx.fillRect(ax * SCALE, a.laneY * SCALE, SCALE, SCALE * 3);
+          ctx.fillRect(ax * SCALE, (a.laneY + 4) * SCALE, SCALE, SCALE);
+        }
+        await new Promise(r => setTimeout(r, 120));
+        ctx.drawImage(bgRef.current, 0, 0);
+        await new Promise(r => setTimeout(r, 120));
+      }
+    }
 
-    const FPS = 35;
+    // Single RAF loop animates all trains simultaneously (prevents mutual overwrite)
+    const FPS = 20;
     const MS_PER_FRAME = 1000 / FPS;
+    const totalFrames = Math.max(...loaded.map(a => a.positions.length));
 
-    return new Promise((resolve) => {
+    await new Promise((resolve) => {
       let idx = 0;
       let lastTime = null;
 
       function step(ts) {
-        if (!lastTime) lastTime = ts;
-        const elapsed = ts - lastTime;
-        const framesToAdvance = Math.floor(elapsed / MS_PER_FRAME);
-
+        if (!lastTime) { lastTime = ts; animRef.current = requestAnimationFrame(step); return; }
+        const framesToAdvance = Math.floor((ts - lastTime) / MS_PER_FRAME);
         if (framesToAdvance > 0) {
           idx += framesToAdvance;
-          lastTime = ts;
+          lastTime += framesToAdvance * MS_PER_FRAME;
         }
 
-        if (idx >= positions.length) {
-          // restore lane to black on canvas
-          const canvas = canvasRef.current;
-          if (canvas) {
-            const ctx = canvas.getContext("2d");
-            fillRect(ctx, 0, laneY, 63, laneY + 4, "black");
-          }
-          resolve();
-          return;
-        }
+        if (idx >= totalFrames) { compositeToMain(); resolve(); return; }
 
         const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          // repaint bg then draw train on top
-          ctx.drawImage(bgRef.current, 0, 0);
-          drawTrainAt(ctx, positions[idx], laneY, img, arrival.colors);
+        if (!canvas) { resolve(); return; }
+        const ctx = canvas.getContext("2d");
+
+        // Single background repaint per frame, then all trains on top
+        ctx.drawImage(bgRef.current, 0, 0);
+        for (const a of loaded) {
+          const frameIdx = Math.min(idx, a.positions.length - 1);
+          const x0 = a.positions[frameIdx];
+          ctx.fillStyle = "black";
+          ctx.fillRect(0, a.laneY * SCALE, W * SCALE, 5 * SCALE);
+          if (a.img) {
+            const srcX = x0 < 0 ? -x0 : 0;
+            const dstX = x0 < 0 ? 0 : x0;
+            const drawW = Math.min(a.sw - srcX, W - dstX);
+            if (drawW > 0) {
+              ctx.imageSmoothingEnabled = false;
+              ctx.drawImage(a.img, srcX, 0, drawW, a.img.naturalHeight,
+                dstX * SCALE, a.laneY * SCALE, drawW * SCALE, a.img.naturalHeight * SCALE);
+            }
+          } else {
+            const color = a.colors.length ? COLOR_MAP[a.colors[0]] || C.GREEN : C.GREEN;
+            const x1 = Math.max(0, x0);
+            const x2 = Math.min(W - 1, x0 + a.sw - 1);
+            if (x2 >= x1) {
+              ctx.fillStyle = rgb(color);
+              ctx.fillRect(x1 * SCALE, a.laneY * SCALE, (x2 - x1 + 1) * SCALE, 5 * SCALE);
+            }
+          }
         }
 
         animRef.current = requestAnimationFrame(step);
@@ -325,33 +362,7 @@ export default function PixooDisplay() {
 
       animRef.current = requestAnimationFrame(step);
     });
-  }, []);
-
-  const runArrivals = useCallback(async (arrivals) => {
-    if (!arrivals || arrivals.length === 0) return;
-    // blink exclamations
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (ctx) {
-      for (let b = 0; b < 3; b++) {
-        for (const arrival of arrivals) {
-          const laneY = arrival.lane === "bottom_right" ? 41 : 17;
-          const ax = arrival.lane === "bottom_right" ? 61 : 1;
-          const color = arrival.colors.length ? COLOR_MAP[arrival.colors[0]] || C.GREEN : C.GREEN;
-          ctx.fillStyle = rgb(color);
-          ctx.fillRect(ax * SCALE + SCALE, laneY * SCALE, SCALE, SCALE * 3);
-          ctx.fillRect(ax * SCALE + SCALE, (laneY + 4) * SCALE, SCALE, SCALE);
-        }
-        await new Promise(r => setTimeout(r, 120));
-        compositeToMain();
-        await new Promise(r => setTimeout(r, 120));
-      }
-    }
-    // animate all arrivals in parallel
-    await Promise.all(arrivals.map(runAnimation));
-    // restore clean background
-    compositeToMain();
-  }, [compositeToMain, runAnimation]);
+  }, [compositeToMain]);
 
   useEffect(() => {
     bgRef.current = document.createElement("canvas");
