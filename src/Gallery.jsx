@@ -363,7 +363,10 @@ export default function Gallery({ isAdmin }) {
       <section className="hero">
         <h1>The Trains</h1>
         <p className="subtitle">Every train that&apos;s been submitted to the display.</p>
-        <a href="/" className="gallery-nav-btn">← Design your own</a>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
+          <a href="/" className="gallery-nav-btn">← Design your own</a>
+          <a href="/?display" className="gallery-nav-btn">Live display →</a>
+        </div>
       </section>
 
       {isAdmin && (

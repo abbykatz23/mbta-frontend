@@ -275,7 +275,9 @@ export default function PixooDisplay() {
     const laneY = arrival.lane === "bottom_right" ? 41 : 17;
     const ltr = arrival.direction === "left_to_right";
 
-    const img = await loadImage(spriteUrl(arrival.colors));
+    const img = arrival.sprite_b64
+      ? await loadImage(`data:image/png;base64,${arrival.sprite_b64}`)
+      : await loadImage(spriteUrl(arrival.colors));
     const sw = img ? img.naturalWidth : 26;
 
     const positions = ltr
