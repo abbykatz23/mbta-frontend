@@ -779,7 +779,10 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
           Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your
           birthday week.
         </p>
-        <a href="/?gallery" className="gallery-nav-btn">View the train gallery →</a>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
+          <a href="/?gallery" className="gallery-nav-btn">View the train gallery →</a>
+          <a href="/?display" className="gallery-nav-btn">Live display →</a>
+        </div>
       </section>
 
       <section className="card">
