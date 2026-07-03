@@ -17,7 +17,7 @@ function DisplayPage() {
         <h1>Live Display</h1>
         <p className="subtitle">Real-time simulation of what&apos;s showing on the pixel display.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <a href="/" className="gallery-nav-btn">← Designer</a>
+          <a href="/" className="gallery-nav-btn">Designer</a>
           <a href="/?gallery" className="gallery-nav-btn">Gallery</a>
         </div>
       </section>
