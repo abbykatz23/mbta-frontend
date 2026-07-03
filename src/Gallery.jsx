@@ -300,6 +300,7 @@ export default function Gallery({ isAdmin }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("adminKey") || "");
+  const [keyInput, setKeyInput] = useState("");
 
   function fetchSubmissions() {
     setLoading(true);
@@ -330,10 +331,9 @@ export default function Gallery({ isAdmin }) {
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
   }
 
-  function handleApiKeyChange(e) {
-    const val = e.target.value;
-    setApiKey(val);
-    sessionStorage.setItem("adminKey", val);
+  function submitApiKey() {
+    setApiKey(keyInput);
+    sessionStorage.setItem("adminKey", keyInput);
   }
 
   if (isAdmin && !apiKey) {
@@ -344,8 +344,9 @@ export default function Gallery({ isAdmin }) {
             <span>Admin key</span>
             <input
               type="text"
-              value={apiKey}
-              onChange={handleApiKeyChange}
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submitApiKey(); }}
               placeholder="Enter API key"
               autoCapitalize="none"
               autoCorrect="off"
@@ -353,6 +354,7 @@ export default function Gallery({ isAdmin }) {
               autoFocus
             />
           </label>
+          <button className="link-btn" onClick={submitApiKey}>Continue</button>
         </section>
       </main>
     );
