@@ -320,12 +320,12 @@ export default function PixooDisplay() {
       let lastTime = null;
 
       function step(ts) {
-        if (!lastTime) { lastTime = ts; animRef.current = requestAnimationFrame(step); return; }
-        const framesToAdvance = Math.floor((ts - lastTime) / MS_PER_FRAME);
-        if (framesToAdvance > 0) {
-          idx += framesToAdvance;
-          lastTime += framesToAdvance * MS_PER_FRAME;
+        // Wait until a full Pixoo frame's worth of time has elapsed, then draw exactly once
+        if (lastTime !== null && ts - lastTime < MS_PER_FRAME) {
+          animRef.current = requestAnimationFrame(step);
+          return;
         }
+        lastTime = ts;
 
         if (idx >= totalFrames) { compositeToMain(); resolve(); return; }
 
@@ -336,8 +336,7 @@ export default function PixooDisplay() {
         // Single background repaint per frame, then all trains on top
         ctx.drawImage(bgRef.current, 0, 0);
         for (const a of loaded) {
-          const frameIdx = Math.min(idx, a.positions.length - 1);
-          const x0 = a.positions[frameIdx];
+          const x0 = a.positions[Math.min(idx, a.positions.length - 1)];
           ctx.fillStyle = "black";
           ctx.fillRect(0, a.laneY * SCALE, W * SCALE, 5 * SCALE);
           if (a.img) {
@@ -360,6 +359,7 @@ export default function PixooDisplay() {
           }
         }
 
+        idx++;
         animRef.current = requestAnimationFrame(step);
       }
 
