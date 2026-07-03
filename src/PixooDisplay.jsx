@@ -311,8 +311,7 @@ export default function PixooDisplay() {
     }
 
     // Single RAF loop animates all trains simultaneously (prevents mutual overwrite)
-    const FPS = 20;
-    const MS_PER_FRAME = 1000 / FPS;
+    const MS_PER_FRAME = 75;
     const totalFrames = Math.max(...loaded.map(a => a.positions.length));
 
     await new Promise((resolve) => {
