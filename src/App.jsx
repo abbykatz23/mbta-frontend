@@ -135,6 +135,9 @@ export default function App() {
   const [submitError, setSubmitError] = useState("");
   const [flipRtl, setFlipRtl] = useState(true);
   const flipPreviewCanvasRef = useRef(null);
+  const turnstileContainerRef = useRef(null);
+  const turnstileWidgetIdRef = useRef(null);
+  const [captchaToken, setCaptchaToken] = useState("");
   const selectedToolColor = currentColor === TRANSPARENT_COLOR ? "#EFEFEF" : currentColor;
 
   const samples = useMemo(() => buildSamples(), []);
@@ -287,6 +290,39 @@ export default function App() {
       }
     }
   }, [pixels, flipRtl]);
+
+  useEffect(() => {
+    if (submitStatus === "success") {
+      return;
+    }
+
+    let cancelled = false;
+
+    function tryRender() {
+      if (cancelled || !turnstileContainerRef.current || turnstileWidgetIdRef.current) {
+        return;
+      }
+      if (!window.turnstile) {
+        requestAnimationFrame(tryRender);
+        return;
+      }
+      turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+        callback: setCaptchaToken,
+        "expired-callback": () => setCaptchaToken(""),
+      });
+    }
+
+    tryRender();
+
+    return () => {
+      cancelled = true;
+      if (turnstileWidgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetIdRef.current);
+        turnstileWidgetIdRef.current = null;
+      }
+    };
+  }, [submitStatus === "success"]);
 
   useEffect(() => {
     const endDrawing = () => {
@@ -661,7 +697,8 @@ export default function App() {
       name: name.trim(),
       birthday: getBirthdayString(),
       pngData: getPngDataUrl(),
-      flip_rtl: flipRtl
+      flip_rtl: flipRtl,
+      captchaToken
     };
 
     setSubmitStatus("loading");
@@ -683,6 +720,10 @@ export default function App() {
     } catch (err) {
       setSubmitStatus("error");
       setSubmitError(err.message || "Something went wrong. Please try again.");
+      setCaptchaToken("");
+      if (turnstileWidgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetIdRef.current);
+      }
     }
   }
 
@@ -1049,11 +1090,13 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
             />
           </div>
 
+          <div ref={turnstileContainerRef} className="captcha-row" />
+
           <div className="submit-row">
             <button id="download-png" type="button" className="subtle-btn" onClick={downloadPng}>
               Download PNG
             </button>
-            <button type="submit" className="submit-btn" disabled={submitStatus === "loading"}>
+            <button type="submit" className="submit-btn" disabled={submitStatus === "loading" || !captchaToken}>
               {submitStatus === "loading" ? "Submitting…" : "Submit"}
             </button>
           </div>

@@ -821,6 +821,12 @@ button:disabled {
   border-color: color-mix(in srgb, var(--mbta-green) 40%, var(--line));
 }
 
+.captcha-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.9rem;
+}
+
 .submit-row {
   display: flex;
   flex-wrap: wrap;
