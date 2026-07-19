@@ -34,6 +34,7 @@ pixel-for-pixel.
 ```bash
 npm install
 cp .env.example .env   # set VITE_SERVER_URL to your mbta-server API Gateway URL
+                        # and VITE_TURNSTILE_SITE_KEY to your Turnstile site key
 npm run dev
 ```
 
