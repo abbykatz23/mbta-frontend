@@ -24,6 +24,68 @@ const CURSOR_FILL = makeSvgCursor(
   2, 20
 );
 
+const DRAFT_STORAGE_KEY = "pixelTrainDraft";
+
+function isValidPixelGrid(pixels) {
+  return (
+    Array.isArray(pixels) &&
+    pixels.length === GRID_HEIGHT &&
+    pixels.every(
+      (row) =>
+        Array.isArray(row) &&
+        row.length === GRID_WIDTH &&
+        row.every((cell) => cell === null || typeof cell === "string")
+    )
+  );
+}
+
+function isValidPalette(palette) {
+  return Array.isArray(palette) && palette.every((color) => typeof color === "string");
+}
+
+function isValidDraft(draft) {
+  return (
+    !!draft &&
+    typeof draft === "object" &&
+    typeof draft.name === "string" &&
+    typeof draft.birthMonth === "string" &&
+    typeof draft.birthDay === "string" &&
+    typeof draft.currentColor === "string" &&
+    typeof draft.flipRtl === "boolean" &&
+    isValidPalette(draft.palette) &&
+    isValidPixelGrid(draft.pixels)
+  );
+}
+
+function loadDraft() {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    return isValidDraft(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(draft) {
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    // ignore storage errors (e.g. private browsing, quota exceeded)
+  }
+}
+
+function clearDraft() {
+  try {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch {
+    // ignore storage errors
+  }
+}
+
 const DEFAULT_PALETTE = ["#DA291C", "#ED8B00", "#00843D", "#003DA5"];
 const SAMPLE_COLORS = {
   red: "#DA291C",
@@ -116,24 +178,25 @@ export default function App() {
   const draftColorRef = useRef(null);
 
   const now = useMemo(() => new Date(), []);
-  const [name, setName] = useState("");
-  const [birthMonth, setBirthMonth] = useState(String(now.getMonth() + 1));
-  const [birthDay, setBirthDay] = useState(String(now.getDate()));
+  const savedDraft = useMemo(() => loadDraft(), []);
+  const [name, setName] = useState(() => savedDraft?.name ?? "");
+  const [birthMonth, setBirthMonth] = useState(() => savedDraft?.birthMonth ?? String(now.getMonth() + 1));
+  const [birthDay, setBirthDay] = useState(() => savedDraft?.birthDay ?? String(now.getDate()));
   const [currentTool, setCurrentTool] = useState("paint");
-  const [palette, setPalette] = useState(DEFAULT_PALETTE);
-  const [currentColor, setCurrentColor] = useState(DEFAULT_PALETTE[0]);
+  const [palette, setPalette] = useState(() => savedDraft?.palette ?? DEFAULT_PALETTE);
+  const [currentColor, setCurrentColor] = useState(() => savedDraft?.currentColor ?? DEFAULT_PALETTE[0]);
   const [pickerColor, setPickerColor] = useState(DEFAULT_PALETTE[0]);
   const [draftColor, setDraftColor] = useState(DEFAULT_PALETTE[0]);
   draftColorRef.current = draftColor;
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [pendingDeleteColor, setPendingDeleteColor] = useState(null);
-  const [pixels, setPixels] = useState(makeEmptyPixels);
+  const [pixels, setPixels] = useState(() => savedDraft?.pixels ?? makeEmptyPixels());
   const sampleIndexRef = useRef(-1);
   const [undoStack, setUndoStack] = useState([]);
   const [tintedBucketIcon, setTintedBucketIcon] = useState(bucketIcon);
   const [submitStatus, setSubmitStatus] = useState(null); // null | "loading" | "success" | "error"
   const [submitError, setSubmitError] = useState("");
-  const [flipRtl, setFlipRtl] = useState(true);
+  const [flipRtl, setFlipRtl] = useState(() => savedDraft?.flipRtl ?? true);
   const flipPreviewCanvasRef = useRef(null);
   const turnstileContainerRef = useRef(null);
   const turnstileWidgetIdRef = useRef(null);
@@ -195,6 +258,13 @@ export default function App() {
 
     ctx.restore();
   }, [pixels]);
+
+  useEffect(() => {
+    if (submitStatus === "success") {
+      return;
+    }
+    saveDraft({ name, birthMonth, birthDay, palette, currentColor, pixels, flipRtl });
+  }, [name, birthMonth, birthDay, palette, currentColor, pixels, flipRtl, submitStatus]);
 
   const hasPixels = useMemo(() => pixels.some((row) => row.some((cell) => cell !== null)), [pixels]);
 
@@ -717,6 +787,7 @@ export default function App() {
       }
 
       setSubmitStatus("success");
+      clearDraft();
     } catch (err) {
       setSubmitStatus("error");
       setSubmitError(err.message || "Something went wrong. Please try again.");
@@ -728,6 +799,7 @@ export default function App() {
   }
 
   function handleDesignAnother() {
+    clearDraft();
     setPixels(makeEmptyPixels());
     setName("");
     setUndoStack([]);
