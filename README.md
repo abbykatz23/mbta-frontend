@@ -1,14 +1,20 @@
 # mbta-frontend
 
-The website for the [MBTA pixel train display](https://github.com/abbykatz23/mbta-display)
+The website for the [MBTA pixel train display](https://makeatrain.netlify.app)
 project — design a 5×26 pixel train sprite, submit it with a name and birthday, and
 it goes into the animation rotation on the physical display (with better odds
 during your birthday week). Also includes a public gallery and a live browser
 simulation of what's currently showing on the real display.
 
+You can submit a train right now at [makeatrain.pre-idea.com](https://makeatrain.pre-idea.com)
+(or [makeatrain.netlify.app](https://makeatrain.netlify.app) in case I don't renew my domain subscription hehe).
+DO IT!!! IT'S SO FUN!!!
+
 Part of three repos: [mbta-display](https://github.com/abbykatz23/mbta-display) (Pi
 client) · [mbta-server](https://github.com/abbykatz23/mbta-server) (serverless API)
 · **mbta-frontend** (this repo).
+
+**The mbta-display repo has the best readme.**
 
 ## Pages
 
