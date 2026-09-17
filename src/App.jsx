@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import bucketIcon from "./static/bucket.png";
 import { MONTHS } from "./constants";
+import InfoTooltip from "./InfoTooltip";
 
 const GRID_WIDTH = 26;
 const GRID_HEIGHT = 5;
@@ -887,6 +888,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
   return (
     <main className="page-shell">
       <section className="hero">
+        <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the designer, where you paint your train pixel by pixel and send it in." />
         <h1>Design Your Pixel Train</h1>
         <p className="subtitle">
           Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your
@@ -1113,7 +1115,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
 
             <div className="canvas-wrap">
               <div className="canvas-with-labels">
-                <div className="direction-label direction-back">← back</div>
+                <div className="direction-label direction-back">Back<br />of Train</div>
                 <canvas
                   ref={canvasRef}
                   id="pixel-canvas"
@@ -1125,7 +1127,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
                   onPointerDown={handlePointerDown}
                   onPointerMove={handlePointerMove}
                 />
-                <div className="direction-label direction-front">front →</div>
+                <div className="direction-label direction-front">Front<br />of Train</div>
               </div>
             </div>
 

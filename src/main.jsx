@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import Gallery from "./Gallery";
 import PixooDisplay from "./PixooDisplay";
+import InfoTooltip from "./InfoTooltip";
 import "./styles.css";
 
 const searchParams = new URLSearchParams(window.location.search);
@@ -14,6 +15,7 @@ function DisplayPage() {
   return (
     <main className="page-shell">
       <section className="hero">
+        <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is a live simulation of what's currently showing on that real display." />
         <h1>Live Display</h1>
         <p className="subtitle">Real-time simulation of what&apos;s showing on the pixel display.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -21,7 +23,7 @@ function DisplayPage() {
           <a href="/?gallery" className="gallery-nav-btn">Gallery</a>
         </div>
       </section>
-      <section className="card" style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+      <section className="card display-card" style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
         <PixooDisplay />
       </section>
     </main>

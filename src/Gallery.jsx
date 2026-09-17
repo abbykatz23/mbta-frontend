@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { MONTH_NAMES, MONTHS } from "./constants";
+import InfoTooltip from "./InfoTooltip";
+
+const NO_MIRROR_EXPLANATION =
+  "This train doesn't flip when it changes direction, so any text on it reads correctly both ways instead of coming out backwards.";
 
 const LINK_ROW = 3;
 const LINK_COLOR = "#464646";
@@ -203,7 +207,16 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
           <>
             <span className="train-card-name">{submission.name}</span>
             <span className="train-card-birthday">{formatBirthday(submission.birthday)}</span>
-            {submission.flip_rtl === false && <span className="train-card-no-mirror">no mirror</span>}
+            {submission.flip_rtl === false && (
+              <span className="train-card-no-mirror">
+                no mirror
+                <InfoTooltip
+                  className="info-tooltip--inline"
+                  label="What does 'no mirror' mean?"
+                  text={NO_MIRROR_EXPLANATION}
+                />
+              </span>
+            )}
             {error && <span className="train-card-error">{error}</span>}
             {queuedMsg && <span className="train-card-queued">{queuedMsg}</span>}
             {isAdmin && (
@@ -363,6 +376,7 @@ export default function Gallery({ isAdmin }) {
   return (
     <main className="page-shell">
       <section className="hero">
+        <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the gallery, showing every train that's been submitted so far." />
         <h1>The Trains</h1>
         <p className="subtitle">Every train that&apos;s been submitted to the display.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -378,6 +392,8 @@ export default function Gallery({ isAdmin }) {
       )}
 
       <section className="card">
+        <p className="section-heading">Submitted Trains</p>
+        <p className="subtitle" style={{ marginBottom: "1rem" }}>Trains designed and submitted by everyone, in the running to show up on the display.</p>
         {loading && <p className="gallery-loading">Loading trains…</p>}
         {error && <p className="submit-error">{error}</p>}
         {!loading && !error && submissions.length === 0 && (
@@ -407,7 +423,7 @@ export default function Gallery({ isAdmin }) {
 
       {monthTrains.length > 0 && (
         <section className="card">
-          <p className="month-trains-heading">Month Trains</p>
+          <p className="section-heading">Month Trains</p>
           <p className="subtitle" style={{ marginBottom: "1rem" }}>Special trains that show up randomly during their month.</p>
           <div className="gallery-grid">
             {monthTrains.map((t) => (
