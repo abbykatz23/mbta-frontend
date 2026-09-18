@@ -212,6 +212,7 @@ function TrainCard({ submission, isAdmin, apiKey, onDelete, onRefresh }) {
                 no mirror
                 <InfoTooltip
                   className="info-tooltip--inline"
+                  variant="icon"
                   label="What does 'no mirror' mean?"
                   text={NO_MIRROR_EXPLANATION}
                 />
@@ -376,8 +377,10 @@ export default function Gallery({ isAdmin }) {
   return (
     <main className="page-shell">
       <section className="hero">
-        <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the gallery, showing every train that's been submitted so far." />
-        <h1>The Trains</h1>
+        <div className="hero-top">
+          <h1>The Trains</h1>
+          <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the gallery, showing every train that's been submitted so far." />
+        </div>
         <p className="subtitle">Every train that&apos;s been submitted to the display.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <a href="/" className="gallery-nav-btn">Designer</a>

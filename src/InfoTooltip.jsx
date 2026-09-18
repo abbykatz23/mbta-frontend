@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function InfoTooltip({ text, label = "What is this?", className = "" }) {
+export default function InfoTooltip({ text, label = "What is this?", className = "", variant = "text" }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
 
@@ -45,7 +45,7 @@ export default function InfoTooltip({ text, label = "What is this?", className =
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
       >
-        ?
+        {variant === "icon" ? "?" : label}
       </button>
       {open && (
         <div className="info-tooltip-bubble" role="tooltip">

@@ -72,30 +72,45 @@ body::after {
   border-radius: 0;
   background: linear-gradient(180deg, var(--panel), var(--panel-2));
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.35);
-  padding: 0.85rem 2.35rem 0.95rem 1rem;
+  padding: 0.85rem 1rem 0.95rem;
   position: relative;
 }
 
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.hero-top h1 {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hero-top .info-tooltip {
+  margin-left: auto;
+}
+
 .info-tooltip {
-  position: absolute;
-  top: 0.7rem;
-  right: 0.75rem;
-  z-index: 2;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .info-tooltip-trigger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 50%;
   border: 1.5px solid var(--line);
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.03);
   color: var(--muted);
-  font: 700 0.78rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font: 700 0.72rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
   cursor: help;
-  padding: 0;
+  padding: 0.42rem 0.7rem;
+  margin-top: 0.5rem;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
@@ -123,6 +138,7 @@ body::after {
   text-transform: none;
   letter-spacing: normal;
   pointer-events: none;
+  z-index: 2;
 }
 
 .info-tooltip--inline {
@@ -130,7 +146,16 @@ body::after {
   top: -1px;
   display: inline-flex;
   vertical-align: middle;
-  margin-left: 0.35rem;
+  margin-left: 0.4rem;
+}
+
+.info-tooltip--inline .info-tooltip-trigger {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  padding: 0;
+  margin-top: 0;
+  font-size: 0.78rem;
 }
 
 .info-tooltip--inline .info-tooltip-bubble {
@@ -969,15 +994,6 @@ button:disabled {
   .hero,
   .card {
     padding: 0.7rem;
-  }
-
-  .hero {
-    padding-right: 2.1rem;
-  }
-
-  .info-tooltip {
-    top: 0.55rem;
-    right: 0.6rem;
   }
 
   .info-tooltip-bubble {

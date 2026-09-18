@@ -15,8 +15,10 @@ function DisplayPage() {
   return (
     <main className="page-shell">
       <section className="hero">
-        <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is a live simulation of what's currently showing on that real display." />
-        <h1>Live Display</h1>
+        <div className="hero-top">
+          <h1>Live Display</h1>
+          <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is a live simulation of what's currently showing on that real display." />
+        </div>
         <p className="subtitle">Real-time simulation of what&apos;s showing on the pixel display.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <a href="/" className="gallery-nav-btn">Designer</a>
