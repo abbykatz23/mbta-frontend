@@ -1,7 +1,8 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import bucketIcon from "./static/bucket.png";
-import { MONTHS } from "./constants";
+import { MONTHS, getMonthlyTrainIntroText } from "./constants";
 import InfoTooltip from "./InfoTooltip";
+import NavTabs from "./NavTabs";
 
 const GRID_WIDTH = 26;
 const GRID_HEIGHT = 5;
@@ -891,7 +892,9 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
         <div className="hero-top">
           <h1>Design Your Pixel Train</h1>
           <InfoTooltip
-            text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the designer, where you paint your train pixel by pixel and send it in."
+            text={getMonthlyTrainIntroText(
+              "This is the page where you can design + submit your train! DO ITT!!! DO IT OR ELSEE!!"
+            )}
             learnMoreUrl="https://github.com/abbykatz23/mbta-display/blob/master/README.md"
           />
         </div>
@@ -899,10 +902,7 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
           Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your
           birthday week.
         </p>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <a href="/?gallery" className="gallery-nav-btn">Gallery</a>
-          <a href="/?display" className="gallery-nav-btn">Live display</a>
-        </div>
+        <NavTabs current="designer" />
       </section>
 
       <section className="card">

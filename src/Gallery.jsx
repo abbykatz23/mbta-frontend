@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MONTH_NAMES, MONTHS } from "./constants";
+import { MONTH_NAMES, MONTHS, getMonthlyTrainIntroText } from "./constants";
 import InfoTooltip from "./InfoTooltip";
+import NavTabs from "./NavTabs";
 
 const NO_MIRROR_EXPLANATION =
   "This train doesn't flip when it changes direction, so any text on it reads correctly both ways instead of coming out backwards.";
@@ -380,15 +381,12 @@ export default function Gallery({ isAdmin }) {
         <div className="hero-top">
           <h1>The Trains</h1>
           <InfoTooltip
-            text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the gallery, showing every train that's been submitted so far."
+            text={getMonthlyTrainIntroText("This page is a gallery of all of the trains that have been submitted.")}
             learnMoreUrl="https://github.com/abbykatz23/mbta-display/blob/master/README.md"
           />
         </div>
         <p className="subtitle">Every train that&apos;s been submitted to the display.</p>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <a href="/" className="gallery-nav-btn">Designer</a>
-          <a href="/?display" className="gallery-nav-btn">Live display</a>
-        </div>
+        <NavTabs current="gallery" />
       </section>
 
       {isAdmin && (
