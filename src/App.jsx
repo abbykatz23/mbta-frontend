@@ -890,7 +890,10 @@ const draftRgb = useMemo(() => hexToRgb(draftColor), [draftColor]);
       <section className="hero">
         <div className="hero-top">
           <h1>Design Your Pixel Train</h1>
-          <InfoTooltip text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the designer, where you paint your train pixel by pixel and send it in." />
+          <InfoTooltip
+            text="This is Abby's pixel train project: design a tiny pixel-art train and submit it to potentially appear, animated, on a physical LED display. This page is the designer, where you paint your train pixel by pixel and send it in."
+            learnMoreUrl="https://github.com/abbykatz23/mbta-display/blob/master/README.md"
+          />
         </div>
         <p className="subtitle">
           Create a 5 x 26 train sprite and it can show up on Abby&apos;s train display, with extra odds during your

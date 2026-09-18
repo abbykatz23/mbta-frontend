@@ -137,8 +137,24 @@ body::after {
   text-align: left;
   text-transform: none;
   letter-spacing: normal;
-  pointer-events: none;
   z-index: 2;
+}
+
+.info-tooltip-text {
+  margin: 0;
+}
+
+.info-tooltip-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #8fb8e6;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.info-tooltip-link:hover,
+.info-tooltip-link:focus-visible {
+  text-decoration: underline;
 }
 
 .info-tooltip--inline {
